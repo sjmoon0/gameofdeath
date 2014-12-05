@@ -1,0 +1,145 @@
+<html>
+
+<head>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+</head>
+
+<body>
+	<nav class="navbar navbar-default navbar-static-top" role="navigation">
+	  <div class="container">
+	  	<div class="navbar-header"><a class="navbar-brand">Game Of Death</a></div>
+	  </div>
+	</nav>
+
+	<!--<img src="images/stan.jpg" alt="Mountain View" style="width:304px;height:228px">-->
+
+	<!-- Display this upon player login. Adjust bar accordingly after each player logs in.-->
+	<!-- Hide this when 4 players login.-->
+	<div id="welcome" class="container jumbotron" style="padding-left:5%;padding-right:5%;">
+		<div class="row container-fluid">
+			<h3>Waiting for all players to join...</h3>
+			<div class="progress">
+			  <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="width: 25%">
+			    <span class="sr-only">45% Complete</span>
+			  </div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Display this when 4 players have logged in.-->
+	<!-- When a player chooses one, send choice to server. -->
+	<!-- Server should constantly update available choices. Darken unavailable choices.-->
+	<div id="choosecharacter" class="container jumbotron">
+		<div class="row container-fluid" style="text-align:center;">
+		  <h2>Please choose a character</h2>
+		  <div class="col-xs-6 col-md-3">
+		    <a href="#" id="Ape" class="thumbnail" style="background-color:blue;height:50px;width:100%;color:white;">Ape</a>
+		  </div>
+		  <div class="col-xs-6 col-md-3">
+		    <a href="#" id="Bob" class="thumbnail" style="background-color:red;height:50px;width:100%;color:white;">Bob</a>
+		  </div>
+		  <div class="col-xs-6 col-md-3">
+		    <a href="#" id="Cow" class="thumbnail" style="background-color:purple;height:50px;width:100%;color:white;">Cow</a>
+		  </div>
+		  <div class="col-xs-6 col-md-3">
+		    <a href="#" id="Dan" class="thumbnail" style="background-color:green;height:50px;width:100%;color:white;">Dan</a>
+		  </div>
+		</div>
+	</div>
+
+	<div id="wait" class="container jumbotron" style="padding-left:5%;padding-right:5%;">
+		<div class="row container-fluid">
+			<h3>You chose <b id="charchoice"></b>! Excellent choice.<h3>
+			<div class="progress">
+			  <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="width: 25%">
+			    <span class="sr-only">45% Complete</span>
+			  </div>
+			</div>
+			<h3>Waiting for all players to choose character...</h3>
+		</div>
+	</div>
+
+
+</body>
+
+
+<script>
+  var socket = io.connect('http://131.118.95.193',{'forceNew':true});//io('http://131.118.95.193');
+  socket.on('load', function (data) {
+    console.log(data);
+    socket.emit('check_game_started', { my: 'data' });
+    socket.on('last_client_loaded', function(hasStarted){
+    	console.log("Has game started? :"+hasStarted);
+    	if(hasStarted==true){
+    		$('#choosecharacter').show();
+    	}
+    });
+  });
+
+  socket.on('client_counter', function (data) {
+    console.log(data);
+    incrementLoadBar(data);
+  });
+
+  socket.on('client_disconnect', function (data) {
+    console.log(data);
+  });
+
+  socket.on('game_started', function (data) {
+    console.log(data);
+    $('#welcome').hide();
+    $('#choosecharacter').show();
+  });
+
+  socket.on('disable_player_choice', function(data){
+  	var id=data.stuff[0].chara;
+  	incrementLoadBar(data.stuff[0].numChar);
+  	console.log(id +" was chosen");
+  	$('#'+id).hide();
+  });
+
+  socket.on('start_gameplay',function(nonsense){
+	//The data passed into this (nonsense) will be all player location data.
+	//That data should be passed into a function that renders the board
+	/*
+	socket.on('take_turn', function(boardChange){
+		//This data (boardChange) should also be passed into a function that renders board
+		if(boardChange.nextPlayerID==myID){
+			//Display Dice to roll
+			socket.emit('roll_dice','no data necessary');
+			//While waiting for dice roll, display spinning dice
+			socket.on('roll_result', function(roll){
+				//Display Dice roll
+			});
+			//vvv This vvv should be called by a jquery selector on click after dice roll
+			//socket.emit('end_turn', 'no data necessary');
+		}
+	});
+	*/
+	$('#wait').hide();
+  });
+
+</script>
+
+<script>
+	$(document).ready(function(){
+		$('#choosecharacter').hide();
+		$('#wait').hide();
+	});
+
+	$('.thumbnail').click(function(something){
+		socket.emit('player_chosen', something.target.id);
+		$('#choosecharacter').hide();
+		$('#wait').show();
+		$('#charchoice').html(something.target.id);
+	});
+
+	var incrementLoadBar=function(numPeople){
+		$('.progress-bar').css('width',numPeople*25+'%');
+	}
+</script>
+
+</html>
