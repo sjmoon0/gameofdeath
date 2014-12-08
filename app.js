@@ -1,6 +1,7 @@
 var app = require('http').createServer(handler)
 var io = require('socket.io')(app);
 var fs = require('fs');
+var url = require('url');
 
 var numClients=0;
 var gameStarted=false;
@@ -9,14 +10,42 @@ var numCharChosen=0;
 app.listen(8001);
 
 function handler (req, res) {
+  
+  var url_request = url.parse(req.url).pathname;      
+  var tmp  = url_request.lastIndexOf(".");
+  var extension  = url_request.substring((tmp + 1));
+  
+  console.log("hey: "+url_request);
+
   fs.readFile(__dirname + '/index.html',
+  //fs.readFile(__dirname + url_request,
   function (err, data) {
     if (err) {
       res.writeHead(500);
       return res.end('Error loading index.html');
     }
-
-    res.writeHead(200);
+    
+    else{
+        if (extension === 'html') res.writeHeader(200, {"Content-Type": 'text/html'});
+        else if (extension === 'htm') res.writeHeader(200, {"Content-Type": 'text/html'});
+        else if (extension === 'css') res.writeHeader(200, {"Content-Type": 'text/css'});
+        else if (extension === 'js') res.writeHeader(200, {"Content-Type": 'application/javascript'});
+        else if (extension === 'png') {
+          res.writeHeader(200, {"Content-Type": 'image/png'});
+          res.end(url_request,'binary');
+          return;
+        }
+        else if (extension === 'jpg') {
+          res.writeHeader(200, {"Content-Type": 'image/jpg'});
+          res.end(url_request,'binary');
+          return;
+        }
+        else if (extension === 'jpeg') res.writeHeader(200, {"Content-Type": 'image/jpeg'});
+        else { res.writeHead(200);console.log("NO CORRECT EXTENSION");};
+    }
+    
+    //console.log(extension);
+    //res.writeHeader(200,{"Content-Type": "text/html"});
     res.end(data);
   });
 }
@@ -47,7 +76,9 @@ io.on('connection', function (socket) {
 
   socket.on('check_game_started', function (data) {
     socket.emit('last_client_loaded', gameStarted);
-    console.log("Last Player Loaded!");
+    if(gameStarted){
+      console.log("Last Player Loaded!");
+    }
   });
 
   socket.on('player_chosen', function(cp){

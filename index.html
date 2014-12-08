@@ -1,6 +1,7 @@
 <html>
 
 <head>
+	<!--<script src="./drawBoard.js" type="application/javascript"></script>-->
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
@@ -13,8 +14,6 @@
 	  	<div class="navbar-header"><a class="navbar-brand">Game Of Death</a></div>
 	  </div>
 	</nav>
-
-	<!--<img src="images/stan.jpg" alt="Mountain View" style="width:304px;height:228px">-->
 
 	<!-- Display this upon player login. Adjust bar accordingly after each player logs in.-->
 	<!-- Hide this when 4 players login.-->
@@ -50,6 +49,7 @@
 		</div>
 	</div>
 
+	<!--  Display this when a player has chosen his character and is waiting for others to choose theirs-->
 	<div id="wait" class="container jumbotron" style="padding-left:5%;padding-right:5%;">
 		<div class="row container-fluid">
 			<h3>You chose <b id="charchoice"></b>! Excellent choice.<h3>
@@ -61,6 +61,10 @@
 			<h3>Waiting for all players to choose character...</h3>
 		</div>
 	</div>
+
+	<center id="gamespace">
+		<canvas id="c" width="800" height='600'></canvas>
+	</center>
 
 
 </body>
@@ -120,6 +124,8 @@
 	});
 	*/
 	$('#wait').hide();
+	$('#gamespace').show();
+	draw_c();
   });
 
 </script>
@@ -128,6 +134,9 @@
 	$(document).ready(function(){
 		$('#choosecharacter').hide();
 		$('#wait').hide();
+		//$('#welcome').hide();
+		//$('#gamespace').show();
+		//draw_c();
 	});
 
 	$('.thumbnail').click(function(something){
@@ -139,6 +148,138 @@
 
 	var incrementLoadBar=function(numPeople){
 		$('.progress-bar').css('width',numPeople*25+'%');
+	}
+
+	var draw_c=function () {
+	  //Variables
+	  var c_canvas = document.getElementById("c");
+	  var context = c_canvas.getContext("2d");
+	  var outR = 275;
+	  var innR = 225;
+	  var numSpaces = 20;
+	  var width = c_canvas.width;
+	  var height = c_canvas.height;
+	  var xMid = (width / 2);
+	  var yMid = (height / 2);
+	  var health = 80;
+	  var money = 4000;
+	  
+	  //Draw Background
+	  context.fillStyle = "#a2a2a2";
+	  context.fillRect(0,0, width, height);
+	  
+	  //Draw Outline
+	  context.strokeStyle = "#000000";
+	  context.strokeRect(0,0, width, height);
+	  
+	  //Draw Circle
+	  context.lineWidth = 3;
+	  context.beginPath();
+	  context.arc(xMid,yMid,innR,0,2*Math.PI);
+	  context.fillStyle = "#8A0707";
+	  context.closePath();
+	  context.fill();
+	  
+	  context.beginPath();
+	  context.arc(xMid,yMid,outR,0,2*Math.PI);
+	  context.closePath();
+	  context.strokeStyle = "#000000";
+	  context.stroke();
+	  
+	  //var even = 0;
+	  //Draw Spaces
+	  for (var z = 0; z <= 2*Math.PI; z += Math.PI / numSpaces){
+	  	context.moveTo((Math.sin(z) * outR) + xMid, (Math.cos(z) * outR) + yMid);
+	  	context.lineTo((Math.sin(z) * innR) + xMid, (Math.cos(z) * innR) + yMid);
+	  }  
+	    
+	  context.stroke();
+	  
+	  //Create Array for Colored Spaces
+	  var spaceColor = ["red"];
+	  var text = "Colors: ";
+	  for (index = 0; index < numSpaces * 2; index++){
+	  	switch(index){
+	  	case 0:
+	  	case 1:
+	  		spaceColor[index] = "red"; //hospital spaces
+	  		break;
+	  	case 6:
+	  	case 25:
+	  		spaceColor[index] = "#CCB280"; //shop spaces
+	  		break;
+	  	case 15:
+	  	case 30: 
+	  		spaceColor[index] = "#251919"; //death cut spaces
+	  		break;
+	  	case 20:
+	  	case 35:
+	  		spaceColor[index] = "#009900"; //good fortune spaces
+	  		break;
+	  	default:
+	  		spaceColor[index] = "#FFFF99"; //normal spaces
+	  		break;
+	  	}
+	  }
+	  
+	  //Draw Multiple Colored Squares
+	  var temp = 0;
+	  for(var z = 0; z < numSpaces*2; z++){
+	    context.beginPath();
+	    context.arc(xMid,yMid,outR,(Math.PI/numSpaces) * (z-1),(Math.PI/numSpaces) * z);
+	    context.arc(xMid,yMid,innR,(Math.PI/numSpaces) * z,(Math.PI/numSpaces) * (z-1),true);
+	    context.closePath();
+	    context.fillStyle = spaceColor[z];
+	    context.fill();
+	  }
+	  
+	  //Draw 'Game of Death'
+	  var deathX = 230;
+	  var deathY = 300
+	  
+	  context.font = '60pt Chiller';
+	  context.strokeStyle = "#000000";
+	  context.lineWidth = 3;
+	  context.strokeText('Game of Death', deathX, deathY);
+	  
+	  //Draw Health Bar
+	  context.fillStyle = "red";
+	  context.fillRect(20, height-40, 200 - ((100 - health) * 2), 20);
+	  
+	  context.beginPath();
+	  context.rect(20, height-40, 200, 20);
+	  context.strokeStyle = "#000000";
+	  context.stroke();
+	  
+	  //Draw "Health <3"
+	  context.font = '12pt Arial';
+	  context.fillStyle = "#000000";
+	  context.fillText("Health: " + health + " / 100", 110, height-50);
+	
+	  //Draw Money
+	  context.font = '16pt Arial';
+	  context.fillStyle = "green";
+	  context.fillText("$" + money, width-80, height-30);
+	  
+	  //Draw Avatar & Name
+	  var imageObj = new Image();
+	  var p1 = "User";
+	  imageObj.src = "http://131.118.95.193/steve/game/images/thebee3.jpg";
+	  
+	  imageObj.onload = function() {
+		context.drawImage(imageObj, 20, 20, 125, 125);
+	  };
+	  
+	  
+	  context.beginPath();
+	  context.rect(20, 20, 125, 125);
+	  context.stroke();
+	  
+	  context.fillStyle = "black";
+	  context.font = '12pt Arial';
+	  context.fillText("Player 1", 50, 165);
+	  context.fillText(p1, 60, 180);  
+    
 	}
 </script>
 
