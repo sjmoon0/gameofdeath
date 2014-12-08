@@ -6,6 +6,7 @@ var url = require('url');
 var numClients=0;
 var gameStarted=false;
 var numCharChosen=0;
+var allClients=[];
 
 app.listen(8001);
 
@@ -14,6 +15,7 @@ function handler (req, res) {
   var url_request = url.parse(req.url).pathname;      
   var tmp  = url_request.lastIndexOf(".");
   var extension  = url_request.substring((tmp + 1));
+  
   
   console.log("hey: "+url_request);
 
@@ -54,9 +56,10 @@ console.log("~Server Running~");
 io.on('connection', function (socket) {
   console.log("A Client connected");
   numClients++;
-
+  allClients.push(socket);
   //This sends data only one client. Sent only once upon connection
-  socket.emit('load', { hello: 'world' });
+  var uID="Client-"+allClients.indexOf(socket);
+  socket.emit('load', { user: uID });
   //This sends data to all connected clients
   io.emit('client_counter',numClients);
 
@@ -73,9 +76,14 @@ io.on('connection', function (socket) {
         //Accept player input (click to finish turn. "OK" on the card)
       //}
     }
+    else if(numClients>4){
+      numClients--;
+      delete allClients[allClients.indexOf(socket)];
+    }
 
   socket.on('check_game_started', function (data) {
     socket.emit('last_client_loaded', gameStarted);
+    console.log(data);
     if(gameStarted){
       console.log("Last Player Loaded!");
     }
@@ -96,6 +104,7 @@ io.on('connection', function (socket) {
   socket.on('disconnect',function(){
     console.log("A client disconnected");
     numClients--;
+    delete allClients[allClients.indexOf(socket)];
     io.emit('client_disconnect',"We've lost another comrade!");
   });
 

@@ -5,6 +5,7 @@
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+	<script src="//cdn.jsdelivr.net/jquery.cookie/1.4.1/jquery.cookie.min.js"></script>
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
 </head>
 
@@ -72,9 +73,13 @@
 
 <script>
   var socket = io.connect('http://131.118.95.193',{'forceNew':true});//io('http://131.118.95.193');
+  var clientID;
+  var allowedInGame=false;
+
   socket.on('load', function (data) {
     console.log(data);
-    socket.emit('check_game_started', { my: 'data' });
+    clientID=data;
+    socket.emit('check_game_started', { un: clientID });
     socket.on('last_client_loaded', function(hasStarted){
     	console.log("Has game started? :"+hasStarted);
     	if(hasStarted==true){
@@ -84,8 +89,14 @@
   });
 
   socket.on('client_counter', function (data) {
-    console.log(data);
-    incrementLoadBar(data);
+    if(data<5){
+	    console.log(data);
+	    incrementLoadBar(data);	
+    	allowedInGame=true;
+    }
+    if(!allowedInGame){
+    	window.location.replace("http://131.118.95.193");
+    }
   });
 
   socket.on('client_disconnect', function (data) {
@@ -131,9 +142,24 @@
 </script>
 
 <script>
+	
+	/*
+	var uName='default';
+	var checkCookie = function(){
+		if (typeof $.cookies('session') === 'undefined'){
+		 	alert("You cannot view this page");
+		 	window.location.replace("http://131.118.95.193");
+		} else {
+			uName=$.cookie('session').get();
+		}
+	}
+	*/
+
 	$(document).ready(function(){
 		$('#choosecharacter').hide();
 		$('#wait').hide();
+		$('#gamespace').hide();
+		//checkCookie();
 		//$('#welcome').hide();
 		//$('#gamespace').show();
 		//draw_c();
