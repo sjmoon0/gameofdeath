@@ -13,6 +13,17 @@
 	<nav class="navbar navbar-default navbar-static-top" role="navigation">
 	  <div class="container">
 	  	<div class="navbar-header"><a class="navbar-brand">Game Of Death</a></div>
+	  	<!-- Get rid of this for production-->
+	  	<div class="collapse navbar-collapse">
+	  		<ul class="nav navbar-nav">
+	  			<li><a>Ape:<b id="devStatus1">3</b></a></li>
+	  			<li><a>Bob:<b id="devStatus2">3</b></a></li>
+	  			<li><a>Cow:<b id="devStatus3">3</b></a></li>
+	  			<li><a>Dan:<b id="devStatus4">3</b></a></li>
+	  			<li><a>CurrentPlayer:<b id="devStatus5">0</b></a></li>
+	  		</ul>
+	  	</div>
+	  	<!--Get rid of this for production -->
 	  </div>
 	</nav>
 
@@ -67,6 +78,30 @@
 		<canvas id="c" width="800" height='600'></canvas>
 	</center>
 
+<!-- Modal -->
+<div class="modal fade" id="turnModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <!--<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>-->
+        <h4 class="modal-title" id="myModalLabel">Modal title</h4>
+      </div>
+      <div id="modalBody"class="modal-body">
+        ...
+      </div>
+      <div id="modalFooter"class="modal-footer">
+        <!--<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Save changes</button>-->
+        <button id='rollDiceButton'type='button' class='btn btn-primary customButton'>Roll!</button>
+        <button id='okCloseButton'type="button" class="btn btn-default customButton" data-dismiss="modal">Okay!</button>
+        <button id='yesButton'type="button" class="btn btn-default customButton" data-dismiss="modal">Yes</button>
+        <button id='noButton'type="button" class="btn btn-default customButton" data-dismiss="modal">No</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
 </body>
 
@@ -75,7 +110,9 @@
   var socket = io.connect('http://131.118.95.193',{'forceNew':true});//io('http://131.118.95.193');
   var clientID;
   var allowedInGame=false;
+  var chosenCharacter;
 
+  //----------------Initialization and Menu functions-----------
   socket.on('load', function (data) {
     console.log(data);
     clientID=data;
@@ -86,6 +123,10 @@
     		$('#choosecharacter').show();
     	}
     });
+  });
+
+  socket.on('client_disconnect', function (data) {
+    console.log(data);
   });
 
   socket.on('client_counter', function (data) {
@@ -99,14 +140,14 @@
     }
   });
 
-  socket.on('client_disconnect', function (data) {
-    console.log(data);
-  });
-
   socket.on('game_started', function (data) {
     console.log(data);
     $('#welcome').hide();
     $('#choosecharacter').show();
+  });
+
+  socket.on('set_user', function(characterName){
+  	chosenCharacter=characterName;
   });
 
   socket.on('disable_player_choice', function(data){
@@ -116,7 +157,10 @@
   	$('#'+id).hide();
   });
 
+
+//-------------------Gameplay functions
   socket.on('start_gameplay',function(nonsense){
+  	showChanges(nonsense);
 	//The data passed into this (nonsense) will be all player location data.
 	//That data should be passed into a function that renders the board
 	/*
@@ -137,7 +181,20 @@
 	$('#wait').hide();
 	$('#gamespace').show();
 	draw_c();
+	socket.emit('ready_to_play',chosenCharacter);
   });
+
+  socket.on('take_turn',function(updatedBoard){
+  	showChanges(updatedBoard);
+  	if(updatedBoard.currPlayer==chosenCharacter){
+  		promptUser(updatedBoard);
+  	}
+  });
+
+  socket.on('roll_result',function(rollResult){
+  	promptUser(rollResult);
+  });
+
 
 </script>
 
@@ -154,15 +211,33 @@
 		}
 	}
 	*/
+	var cards='{"ca":['+
+		'{"type":1, "content":"<insert text here>","brief":"<insert brief text here>", "used":false, "health":"<healthChange integer>", "money":"<moneyChange integer>", "disease":"<name of disease>", "diseaseRate":"<disease integer rate>" },'+
+		'{"type":2, "content":"<insert text here>","brief":"<insert brief text here>", "used":false, "health":"<healthChange integer>", "money":"<moneyChange integer>", "disease":"<name of disease>", "diseaseRate":"<disease integer rate>" },'+
+		'{"type":3, "content":"<insert text here>","brief":"<insert brief text here>", "used":false, "health":"<healthChange integer>", "money":"<moneyChange integer>", "disease":"<name of disease>", "diseaseRate":"<disease integer rate>" }]}';
 
 	$(document).ready(function(){
+		console.log(JSON.parse(cards));
 		$('#choosecharacter').hide();
 		$('#wait').hide();
 		$('#gamespace').hide();
+		//$('.customButton').hide();
+		$('#turnModal').modal({ show: false});
+		//$('#turnModal').modal('show');
+		//alert("hi");
+		//promptUser(1,1);
 		//checkCookie();
 		//$('#welcome').hide();
 		//$('#gamespace').show();
 		//draw_c();
+	});
+
+	$('#rollDiceButton').click(function(){
+		socket.emit('roll_dice',chosenCharacter);
+	});
+
+	$('#okCloseButton').click(function(){
+		socket.emit('end_turn',chosenCharacter);
 	});
 
 	$('.thumbnail').click(function(something){
@@ -174,6 +249,56 @@
 
 	var incrementLoadBar=function(numPeople){
 		$('.progress-bar').css('width',numPeople*25+'%');
+	}
+
+	var promptUser=function(updatedBoard){
+		var getCardType=updatedBoard.spaceType;
+		var getCardContent=updatedBoard.cardContent;
+		var getRollValue=updatedBoard.roll;
+
+		switch(getCardType){
+			case 1: //regular card
+				$('#myModalLabel').html("You rolled a "+getRollValue+" and landed on a regular space. Here is your card:");
+				$('#modalBody').html(getCardContent);
+				$('.customButton').hide();
+				$('#okCloseButton').show();
+			break;
+			case 2: //life cut card
+				$('#myModalLabel').html("You rolled a "+getRollValue+" and landed on a life cut space. Here is your card:");
+				$('#modalBody').html(getCardContent+'<b>LIFE CUT</b>');
+				$('.customButton').hide();
+				$('#okCloseButton').show();
+			break;
+			case 3: //good fortune card
+				$('#myModalLabel').html("You rolled a "+getRollValue+" and landed on a good fortune space. Here is your card:");
+				$('#modalBody').html(getCardContent+'<b>GOOD FORTUNE</b>');
+				$('.customButton').hide();
+				$('#okCloseButton').show();
+			break;
+			case 4: //hospital
+				$('#myModalLabel').html("You rolled a "+getRollValue+" and landed on the hospital.");
+				$('#modalBody').html('Do you wish to heal any ailments? It will cost you: '+getCardContent);
+				$('.customButton').hide();
+				$('#yesButton').show();
+				$('#noButton').show();
+			break;
+			default: //prompt to roll
+				$('#myModalLabel').html("It's your turn! Roll the Dice!");
+				$('#modalBody').html("<div class='row'><div class='thumbnail col-md-6'><img src='http://131.118.95.193/steve/game/images/dice5.png'></div><div class='thumbnail col-md-6'><img src='http://131.118.95.193/steve/game/images/dice6.png'></div></div>");
+				$('.customButton').hide();
+				$('#rollDiceButton').show();
+			break;
+		}
+		$('#turnModal').modal('show');
+
+	}
+
+	var showChanges=function(playerData){
+		$("#devStatus1").html(playerData.p1);
+		$("#devStatus2").html(playerData.p2);
+		$("#devStatus3").html(playerData.p3);
+		$("#devStatus4").html(playerData.p4);
+		$("#devStatus5").html(playerData.currPlayer);
 	}
 
 	var draw_c=function () {
@@ -290,7 +415,8 @@
 	  //Draw Avatar & Name
 	  var imageObj = new Image();
 	  var p1 = "User";
-	  imageObj.src = "http://131.118.95.193/steve/game/images/thebee3.jpg";
+	  var p1 = chosenCharacter;
+	  imageObj.src = "http://131.118.95.193/steve/game/images/"+chosenCharacter+".jpg";
 	  
 	  imageObj.onload = function() {
 		context.drawImage(imageObj, 20, 20, 125, 125);
@@ -303,10 +429,11 @@
 	  
 	  context.fillStyle = "black";
 	  context.font = '12pt Arial';
-	  context.fillText("Player 1", 50, 165);
+	  //context.fillText("Player 1", 50, 165);
 	  context.fillText(p1, 60, 180);  
-    
 	}
+
+	
 </script>
 
 </html>
