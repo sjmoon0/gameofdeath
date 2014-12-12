@@ -239,6 +239,13 @@
 		socket.emit('end_turn',chosenCharacter);
 	});
 
+	$('#yesButton').click(function(){
+		socket.emit('end_turn',chosenCharacter);//YES, YOU WANT TO PURCHASE HEALTH SERVICES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	});
+	$('#noButton').click(function(){
+		socket.emit('end_turn',chosenCharacter);//NO, YOU DONT WANT TO PURCHASE HEALTH SERVICES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	});
+
 	$('.thumbnail').click(function(something){
 		socket.emit('player_chosen', something.target.id);
 		$('#choosecharacter').hide();
@@ -254,32 +261,39 @@
 		var getCardType=updatedBoard.spaceType;
 		var getCardContent=updatedBoard.cardContent;
 		var getRollValue=updatedBoard.roll;
-
 		switch(getCardType){
 			case 1: //regular card
 				$('#myModalLabel').html("You rolled a "+getRollValue+" and landed on a regular space. Here is your card:");
 				$('#modalBody').html(getCardContent);
 				$('.customButton').hide();
 				$('#okCloseButton').show();
+				setHealthAndMoney(updatedBoard.newHealth,updatedBoard.newMoney);
+				draw_c();
 			break;
 			case 2: //life cut card
 				$('#myModalLabel').html("You rolled a "+getRollValue+" and landed on a life cut space. Here is your card:");
-				$('#modalBody').html(getCardContent+'<b>LIFE CUT</b>');
+				$('#modalBody').html(getCardContent);
 				$('.customButton').hide();
 				$('#okCloseButton').show();
+				setHealthAndMoney(updatedBoard.newHealth,updatedBoard.newMoney);
+				draw_c();
 			break;
 			case 3: //good fortune card
 				$('#myModalLabel').html("You rolled a "+getRollValue+" and landed on a good fortune space. Here is your card:");
-				$('#modalBody').html(getCardContent+'<b>GOOD FORTUNE</b>');
+				$('#modalBody').html(getCardContent);
 				$('.customButton').hide();
 				$('#okCloseButton').show();
+				setHealthAndMoney(updatedBoard.newHealth,updatedBoard.newMoney);
+				draw_c();
 			break;
 			case 4: //hospital
 				$('#myModalLabel').html("You rolled a "+getRollValue+" and landed on the hospital.");
-				$('#modalBody').html('Do you wish to heal any ailments? It will cost you: '+getCardContent);
+				$('#modalBody').html('Do you wish to heal any ailments? It will cost you: $'+getCardContent);
 				$('.customButton').hide();
 				$('#yesButton').show();
 				$('#noButton').show();
+				setHealthAndMoney(updatedBoard.newHealth,updatedBoard.newMoney);
+				draw_c();
 			break;
 			default: //prompt to roll
 				$('#myModalLabel').html("It's your turn! Roll the Dice!");
@@ -289,7 +303,7 @@
 			break;
 		}
 		$('#turnModal').modal('show');
-
+		
 	}
 
 	var showChanges=function(playerData){
@@ -300,6 +314,13 @@
 		$("#devStatus5").html(playerData.currPlayer);
 	}
 
+
+	var health = 100;
+	var money = 5000;
+	var setHealthAndMoney=function(h,m){
+		health=h;
+		money=m;
+	}
 	var draw_c=function () {
 	  //Variables
 	  var c_canvas = document.getElementById("c");
@@ -311,8 +332,8 @@
 	  var height = c_canvas.height;
 	  var xMid = (width / 2);
 	  var yMid = (height / 2);
-	  var health = 80;
-	  var money = 4000;
+	  
+	  
 	  
 	  //Draw Background
 	  context.fillStyle = "#a2a2a2";

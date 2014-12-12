@@ -118,8 +118,14 @@ io.on('connection', function (socket) {
 
   socket.on('roll_dice', function(characterThatRolledDice){
     generateRollResult(characterThatRolledDice);
-    console.log('***Dice were rolled->roll:'+rResult.roll+'. spaceType:'+rResult.spaceType+'. newLocation:'+rResult.newLocation+'. cardContent:'+rResult.cardContent);
-    socket.emit('roll_result',rResult);
+    console.log('***Dice were rolled->roll:'+rResult.roll+'. spaceType:'+rResult.spaceType+'. newHealth:'+rResult.newHealth+'. newMoney:'+rResult.newMoney+'. newLocation:'+rResult.newLocation+'. cardContent:'+rResult.cardContent);
+    if(rResult.health<=0){
+      console.log("A Character died!");
+      //emit a game over event to client
+      //emit an event to all clients so they can place a tombstone on the board
+    }else{
+      socket.emit('roll_result',rResult);
+    }
   });
 
   socket.on('end_turn',function(characterThatEndedTurn){
@@ -163,7 +169,7 @@ var initializeGenCards=function(){
     {'used':false,'type':1,'health':0,'money':-100,'disease':null,'diseaseRate':0,'description':'You have donated $100 worth of goods to the Good Will.','brief':'dropped off some stuff at the thrift shop.'},
     {'used':false,'type':1,'health':0,'money':-2500,'disease':null,'diseaseRate':0,'description':'You have donated $2500 to your university.','brief':'donated some money to the local University'},
     {'used':false,'type':1,'health':0,'money':-250000,'disease':null,'diseaseRate':0,'description':'To impress your mate, you have bought a Ferrari for $250,000','brief':'bought a swaggin` new ride!'},
-    {'used':false,'type':1,'health':0,'money':-250,'disease':null,'diseaseRate':0,'description':'To make your mom happy, you bought her a KitchenAid for $200 on Mother`s Day.','brief':'bought a Mother`s day present'},
+    {'used':false,'type':1,'health':0,'money':-200,'disease':null,'diseaseRate':0,'description':'To make your mom happy, you bought her a KitchenAid for $200 on Mother`s Day.','brief':'bought a Mother`s day present'},
     {'used':false,'type':1,'health':0,'money':-15,'disease':null,'diseaseRate':0,'description':'To make your dad happy, you bought him a tie for $15 on Father`s Day.','brief':'bought a Father`s day present'},
     {'used':false,'type':1,'health':0,'money':-100,'disease':null,'diseaseRate':0,'description':'You bought a dozen roses for your mate on Valentine`s Day for $100.','brief':'bought a Valentine`s present. D`awww'},
     {'used':false,'type':1,'health':0,'money':-1000000,'disease':null,'diseaseRate':0,'description':'You have spent $1 million on TV ads for your election campaign.','brief':'is running for public office and spent a lot of money on it.'},
@@ -262,7 +268,7 @@ var initializeCards=function(){
 }
 
 var initializeRollResult=function(){
-  rResult={'roll':0,'spaceType':0,'newLocation':0,'cardContent':null};
+  rResult={'roll':0,'spaceType':0,'newHealth':0,'newMoney':0,'newLocation':0,'cardContent':null};
 }
 
 var generateRollResult=function(name1){
@@ -271,10 +277,23 @@ var generateRollResult=function(name1){
     if(players[i].name==name1){
       players[i].location=(players[i].location+rResult.roll)%40;
       rResult.newLocation=players[i].location;
+      rResult.spaceType=getCardType(rResult.newLocation);
+      var tempc=getRandomCard(rResult.spaceType);
+      if(tempc==null){//hospital space
+        rResult={'roll':rResult.roll,'spaceType':4,'newHealth':players[i].health,'newMoney':players[i].money,'newLocation':players[i].location,'cardContent':(100-players[i].health)*100};
+      }else{//any other space
+        rResult.cardContent=tempc.description;
+        rResult.newHealth=players[i].health+tempc.health;
+        if (rResult.newHealth>100){
+          rResult.newHealth=100;
+        }
+        players[i].health=rResult.newHealth;
+        rResult.newMoney=players[i].money+tempc.money;
+        players[i].money=rResult.newMoney;
+        boardUpdate.prevPlayerBrief=tempc.brief;
+      }
     }
   }
-  rResult.spaceType=1;
-  rResult.cardContent="YOU GOT SHOT. BRO...YOU OKAY?";
   return rResult;
 } 
 
