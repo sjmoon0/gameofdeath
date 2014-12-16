@@ -133,6 +133,10 @@ io.on('connection', function (socket) {
     console.log(characterThatEndedTurn+'`s turn ended. p1:'+boardUpdate.p1+'. p2:'+boardUpdate.p2+'. p3:'+boardUpdate.p3+'. p4:'+boardUpdate.p4+' currPlayer:'+boardUpdate.currPlayer+'. prevPlayerBrief:'+boardUpdate.prevPlayerBrief);
     io.emit('take_turn',boardUpdate);
   });
+
+  socket.on('somebody_died', function(deadGuy){
+    io.emit('bury_them',deadGuy);
+  });
 });
 
 var initializePlayers=function(){
@@ -225,7 +229,7 @@ var initializeLCCards=function(){
     {'used':false,'type':2,'health':-10,'money':0,'disease':null,'diseaseRate':0,'description':'You have been infected with Middle East respiratory syndrome (MERS). Your health is now cut by 10 points.','brief':'got MERS'},
     {'used':false,'type':2,'health':-10,'money':0,'disease':null,'diseaseRate':0,'description':'You have been diagnosed with Anal Cancer. Your health is now cut by 10 points.','brief':'got anal cancer. Ouch.'},
     {'used':false,'type':2,'health':-10,'money':0,'disease':null,'diseaseRate':0,'description':'You have been diagnosed with Appendix Cancer. Your health is now cut by 10 points.','brief':'got appendix cancer.'},
-    {'used':false,'type':2,'health':-10,'money':0,'disease':null,'diseaseRate':0,'description':'You have been diagnosed with Astrocytomas. Your health is now cut by 10 points.','brief':null},
+    {'used':false,'type':2,'health':-10,'money':0,'disease':null,'diseaseRate':0,'description':'You have been diagnosed with Astrocytomas. Your health is now cut by 10 points.','brief':'got the Astrocytomas.'},
     {'used':false,'type':2,'health':-10,'money':0,'disease':null,'diseaseRate':0,'description':'You have been diagnosed with Basal Cell Carcinoma. Your health is now cut by 10 points.','brief':'gpt basal cell carcinoma'},
     {'used':false,'type':2,'health':-10,'money':0,'disease':null,'diseaseRate':0,'description':'You have been diagnosed with Bile Duct Cancer. Your health is now cut by 10 points.','brief':'got bile duct cancer'},
     {'used':false,'type':2,'health':-10,'money':0,'disease':null,'diseaseRate':0,'description':'You have been diagnosed with Bladder Cancer. Your health is now cut by 10 points.','brief':'got bladder cancer'}

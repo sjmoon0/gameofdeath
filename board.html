@@ -1,0 +1,181 @@
+<html>
+<head>
+<title>The Game of Death</title>
+
+<script type="text/javascript">
+
+function draw_c() {
+  //Variables
+  var c_canvas = document.getElementById("c");
+  var context = c_canvas.getContext("2d");
+  var outR = 275;
+  var innR = 200;
+  var numSpaces = 20;
+  var width = c_canvas.width;
+  var height = c_canvas.height;
+  var xMid = width / 2;
+  var yMid = height / 2;
+  var health = 80;
+  var money = 4000;
+  
+  
+  //Draw Background
+  context.fillStyle = "#a2a2a2";
+  context.fillRect(0,0, width, height);
+  
+  //Draw Outline  
+  context.strokeStyle = "#000000";
+  context.strokeRect(0,0, width, height);
+  
+  //Draw Circle
+  context.beginPath();
+  context.arc(xMid,yMid,innR,0,2*Math.PI);
+  context.fillStyle = "#8A0707";
+  context.closePath();
+  context.fill();
+  
+  context.beginPath();
+  context.arc(xMid,yMid,outR,0,2*Math.PI);
+  context.closePath();
+  context.strokeStyle = "#000000";
+  context.stroke();
+  
+  var even = 0;
+  //Draw Spaces
+  for (var z = 0; z <= 2*Math.PI; z += Math.PI / numSpaces){
+  	context.moveTo((Math.sin(z) * outR) + xMid, (Math.cos(z) * outR) + yMid);
+  	context.lineTo((Math.sin(z) * innR) + xMid, (Math.cos(z) * innR) + yMid);
+  }  
+    
+  context.stroke();
+  
+  //Draw Multiple Colored Squares
+  var temp = 0;
+  for(var z = 1; z <= numSpaces*2; z++){
+    context.beginPath();
+    context.arc(xMid,yMid,outR,(Math.PI/numSpaces) * (z-1),(Math.PI/numSpaces) * z);
+    context.arc(xMid,yMid,innR,(Math.PI/numSpaces) * z,(Math.PI/numSpaces) * (z-1),true);
+    context.closePath();
+    if(z % 2 == 0){
+    	context.fillStyle = "red";
+    }
+    else{
+    	context.fillStyle = "blue";
+    }
+    context.fill();
+  }
+  
+  //===== DRAW PIECES =====\\
+  var all_space = 35; //for testing
+  
+  
+  var player1 = new Image();
+  var p1_space = 12;
+  var p1_space_calc = (Math.PI / (numSpaces)) * ((p1_space * 10) / (numSpaces)) * 2;
+  var midR1 = outR - 25;
+  player1.onload = function() {
+        //context.drawImage(player1, xMid + Math.cos(p1_space_calc) * midR1, yMid + Math.sin(p1_space_calc) * midR1);
+        context.drawImage(player1, xMid-100, yMid+25);
+  };
+  
+  player1.src = "images/p1.png";
+  
+  var player2 = new Image();
+  var p2_space = 22;
+  var p2_space_calc = (Math.PI / (numSpaces)) * ((p2_space * 10) / (numSpaces)) * 2;
+  var midR2 = outR - 40;
+  
+  player2.onload = function() {
+        //context.drawImage(player2, xMid + Math.cos(p2_space_calc) * midR2, yMid + Math.sin(p2_space_calc) * midR2);
+        context.drawImage(player2, xMid-35, yMid+25);
+
+  };
+  
+  player2.src = "images/p2.png";
+  
+  var player3 = new Image();
+  var p3_space = 0;
+  var p3_space_calc = (Math.PI / (numSpaces)) * ((p3_space * 10) / (numSpaces)) * 2;
+  var midR3 = outR - 55;
+  
+  player3.onload = function() {
+        //context.drawImage(player3, xMid + Math.cos(p3_space_calc) * midR3, yMid + Math.sin(p3_space_calc) * midR3);
+        context.drawImage(player3, xMid+35, yMid+25);
+
+  };
+  
+  player3.src = "images/p3.png";
+  
+  var player4 = new Image();
+  var p4_space = 10;
+  var p4_space_calc = (Math.PI / (numSpaces)) * ((p4_space * 10) / (numSpaces)) * 2;
+  var midR4 = outR - 70;
+  
+  player4.onload = function() {
+        //context.drawImage(player4, xMid + Math.cos(p4_space_calc) * midR4, yMid + Math.sin(p4_space_calc) * midR4);
+        context.drawImage(player4, xMid+100, yMid+25);
+
+  };
+  
+  player4.src = "images/p4.png";
+  
+  //Draw 'Game of Death'
+  var deathX = 230;
+  var deathY = 300;
+  
+  context.font = '60pt Chiller';
+  context.strokeStyle = "#000000";
+  context.lineWidth = 3;
+  context.strokeText('Game of Death', deathX, deathY);
+
+  //Draw Health Bar
+  context.fillStyle = "red";
+  context.fillRect(20, height-40, 200 - ((100 - health) * 2), 20);
+  
+  context.beginPath();
+  context.rect(20, height-40, 200, 20);
+  context.strokeStyle = "#000000";
+  context.stroke();
+  
+  //Draw "Health <3"
+  context.font = '12pt Arial';
+  context.fillStyle = "#000000";
+  context.fillText("Health: " + health + " / 100", 110, height-50);
+
+  //Draw Money
+  context.font = '16pt Arial';
+  context.fillStyle = "green";
+  context.fillText("$" + money, width-80, height-30);
+  
+  //Draw Avatar & Name
+  var imageObj = new Image();
+  var p1 = "User";
+  
+  imageObj.onload = function() {
+        context.drawImage(imageObj, 20, 20, 125, 125);
+  };
+  
+  imageObj.src = "thebee3.jpg";
+  context.beginPath();
+  context.rect(20, 20, 125, 125);
+  context.stroke();
+  
+  context.fillStyle = "black";
+  context.font = '12pt Arial';
+  context.fillText("Player 1", 50, 165);
+  context.fillText(p1, 60, 180); 
+  
+}
+
+</script>
+
+</head>
+<body onload="draw_c()">
+
+<center> 
+	<canvas id="c" width="800" height="600">
+	</canvas>
+</center>
+
+</html>
+</body>

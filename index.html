@@ -47,13 +47,13 @@
 		<div class="row container-fluid" style="text-align:center;">
 		  <h2>Please choose a character</h2>
 		  <div class="col-xs-6 col-md-3">
-		    <a href="#" id="Ape" class="thumbnail" style="background-color:blue;height:50px;width:100%;color:white;">Ape</a>
+		    <a href="#" id="Ape" class="thumbnail" style="background-color:red;height:50px;width:100%;color:white;">Ape</a>
 		  </div>
 		  <div class="col-xs-6 col-md-3">
-		    <a href="#" id="Bob" class="thumbnail" style="background-color:red;height:50px;width:100%;color:white;">Bob</a>
+		    <a href="#" id="Bob" class="thumbnail" style="background-color:purple;height:50px;width:100%;color:white;">Bob</a>
 		  </div>
 		  <div class="col-xs-6 col-md-3">
-		    <a href="#" id="Cow" class="thumbnail" style="background-color:purple;height:50px;width:100%;color:white;">Cow</a>
+		    <a href="#" id="Cow" class="thumbnail" style="background-color:blue;height:50px;width:100%;color:white;">Cow</a>
 		  </div>
 		  <div class="col-xs-6 col-md-3">
 		    <a href="#" id="Dan" class="thumbnail" style="background-color:green;height:50px;width:100%;color:white;">Dan</a>
@@ -111,6 +111,11 @@
   var clientID;
   var allowedInGame=false;
   var chosenCharacter;
+  var p1Dead=false;
+  var p2Dead=false;
+  var p3Dead=false;
+  var p4Dead=false;
+  var first=true;
 
   //----------------Initialization and Menu functions-----------
   socket.on('load', function (data) {
@@ -186,13 +191,79 @@
 
   socket.on('take_turn',function(updatedBoard){
   	showChanges(updatedBoard);
-  	if(updatedBoard.currPlayer==chosenCharacter){
-  		promptUser(updatedBoard);
-  	}
+	var test=false;
+	switch(chosenCharacter){
+		case 'Ape':test=p1Dead;
+			if(p2Dead&&p3Dead&&p4Dead){
+				$('#myModalLabel').html("Way to go!");
+				$('#modalBody').html("You're the winner Ape!");
+				$('#okCloseButton').show();
+				$('#turnModal').modal('show');
+				return;
+			}
+			break;
+		case 'Bob':test=p2Dead;
+			if(p1Dead&&p3Dead&&p4Dead){
+				$('#myModalLabel').html("Way to go!");
+				$('#modalBody').html("You're the winner Bob!");
+				$('#okCloseButton').show();
+				$('#turnModal').modal('show');
+				return;
+			}
+			break;
+		case 'Cow':test=p3Dead;
+			if(p1Dead&&p2Dead&&p4Dead){
+				$('#myModalLabel').html("Way to go!");
+				$('#modalBody').html("You're the winner Cow!");
+				$('#okCloseButton').show();
+				$('#turnModal').modal('show');
+				return;
+			}
+			break;
+		case 'Dan':test=p4Dead;
+			if(p1Dead&&p2Dead&&p3Dead){
+				$('#myModalLabel').html("Way to go!");
+				$('#modalBody').html("You're the winner Dan!");
+				$('#okCloseButton').show();
+				$('#turnModal').modal('show');
+				return;
+			}
+			break;
+		default:
+			test=false;
+			console.log('This statement should never be reached. BLAH');
+	}
+	if(!test){
+	  	if(updatedBoard.currPlayer==chosenCharacter){
+	  		promptUser(updatedBoard);
+	  	}
+	}
+	else{
+		//Somehow inform the user that they've died
+		if(updatedBoard.currPlayer==chosenCharacter){
+			socket.emit('end_turn',chosenCharacter);
+		}
+		/*
+		if(first){
+			first=false;
+			socket.emit('end_turn',chosenCharacter);
+			return;
+		}
+		*/
+	}
   });
 
   socket.on('roll_result',function(rollResult){
   	promptUser(rollResult);
+  });
+
+  socket.on('bury_them',function(coffin){
+  	switch(coffin){
+  		case 1:p1Dead=true;break;
+  		case 2:p2Dead=true;break;
+  		case 3:p3Dead=true;break;
+  		case 4:p4Dead=true;break;
+  	}
   });
 
 </script>
@@ -210,13 +281,8 @@
 		}
 	}
 	*/
-	var cards='{"ca":['+
-		'{"type":1, "content":"<insert text here>","brief":"<insert brief text here>", "used":false, "health":"<healthChange integer>", "money":"<moneyChange integer>", "disease":"<name of disease>", "diseaseRate":"<disease integer rate>" },'+
-		'{"type":2, "content":"<insert text here>","brief":"<insert brief text here>", "used":false, "health":"<healthChange integer>", "money":"<moneyChange integer>", "disease":"<name of disease>", "diseaseRate":"<disease integer rate>" },'+
-		'{"type":3, "content":"<insert text here>","brief":"<insert brief text here>", "used":false, "health":"<healthChange integer>", "money":"<moneyChange integer>", "disease":"<name of disease>", "diseaseRate":"<disease integer rate>" }]}';
 
 	$(document).ready(function(){
-		console.log(JSON.parse(cards));
 		$('#choosecharacter').hide();
 		$('#wait').hide();
 		$('#gamespace').hide();
@@ -312,21 +378,69 @@
 		$("#devStatus3").html(playerData.p3);
 		$("#devStatus4").html(playerData.p4);
 		$("#devStatus5").html(playerData.currPlayer);
+		p1_space=playerData.p1;
+		p2_space=playerData.p2;
+		p3_space=playerData.p3;
+		p4_space=playerData.p4;
+		/*
+		if(playerData.p1<=0){
+			p1Dead=true;
+		}
+		if(playerData.p2<=0){
+			p2Dead=true;
+		}
+		if(playerData.p3<=0){
+			p3Dead=true;
+		}
+		if(playerData.p4<=0){
+			p4Dead=true;
+		}
+		*/
+		draw_c();
 	}
 
 
 	var health = 100;
 	var money = 5000;
+
 	var setHealthAndMoney=function(h,m){
-		health=h;
-		money=m;
+		var deadGuy;
+		switch(chosenCharacter){
+			case 'Ape':deadGuy=1;
+				break;
+			case 'Bob':deadGuy=2;
+				break;
+			case 'Cow':deadGuy=3;
+				break;
+			case 'Dan':deadGuy=4;
+				break;
+			default:
+				deadGuy=0;
+				console.log('This statement should never be reached');
+		}
+		if(h<=0){
+			socket.emit('somebody_died',deadGuy);
+			$('#myModalLabel').html("Way to go!");
+			$('#modalBody').html("You somehow managed to get yourself killed.");
+			$('#okCloseButton').show();
+			$('#turnModal').modal('show');
+		}else{
+			health=h;
+			money=m;
+		}
 	}
+
+	var p1_space=0;//red
+	var p2_space=0;//purple
+	var p3_space=0;//blue
+	var p4_space=0;//green
+
 	var draw_c=function () {
 	  //Variables
 	  var c_canvas = document.getElementById("c");
 	  var context = c_canvas.getContext("2d");
 	  var outR = 275;
-	  var innR = 225;
+	  var innR = 200;
 	  var numSpaces = 20;
 	  var width = c_canvas.width;
 	  var height = c_canvas.height;
@@ -375,10 +489,12 @@
 	  	case 1:
 	  		spaceColor[index] = "red"; //hospital spaces
 	  		break;
+	  		/*
 	  	case 6:
 	  	case 25:
 	  		spaceColor[index] = "#CCB280"; //shop spaces
 	  		break;
+	  		*/
 	  	case 15:
 	  	case 30: 
 	  		spaceColor[index] = "#251919"; //death cut spaces
@@ -391,6 +507,7 @@
 	  		spaceColor[index] = "#FFFF99"; //normal spaces
 	  		break;
 	  	}
+	  	
 	  }
 	  
 	  //Draw Multiple Colored Squares
@@ -404,6 +521,74 @@
 	    context.fill();
 	  }
 	  
+	    //===== DRAW PIECES =====\\
+	  var all_space = 35; //for testing
+	  
+	  
+	  var player1 = new Image();
+	  //var p1_space = 12;
+	  var p1_space_calc = (Math.PI / (numSpaces)) * ((p1_space * 10) / (numSpaces)) * 2;
+	  var midR1 = outR - 25;
+	  player1.onload = function() {
+        if(p1Dead){
+    		context.drawImage(player1, xMid-100, yMid+25);
+        }
+        else{
+        	context.drawImage(player1, xMid + Math.cos(p1_space_calc) * midR1, yMid + Math.sin(p1_space_calc) * midR1);
+        }
+	  };
+	  
+	  player1.src = "http://131.118.95.193/steve/game/images/p1.png";
+	  
+	  var player2 = new Image();
+	  //var p2_space = 22;
+	  var p2_space_calc = (Math.PI / (numSpaces)) * ((p2_space * 10) / (numSpaces)) * 2;
+	  var midR2 = outR - 40;
+	  
+	  player2.onload = function() {
+	  	if(p2Dead){
+	  		context.drawImage(player2, xMid-35, yMid+25);
+	  	}
+	  	else{
+	        context.drawImage(player2, xMid + Math.cos(p2_space_calc) * midR2, yMid + Math.sin(p2_space_calc) * midR2);
+	  	}
+	  };
+	  
+	  player2.src = "http://131.118.95.193/steve/game/images/p2.png";
+	  
+	  var player3 = new Image();
+	  //var p3_space = 0;
+	  var p3_space_calc = (Math.PI / (numSpaces)) * ((p3_space * 10) / (numSpaces)) * 2;
+	  var midR3 = outR - 55;
+	  
+	  player3.onload = function() {
+	  	if(p3Dead){
+	  		context.drawImage(player3, xMid+35, yMid+25);
+	  	}
+	  	else{
+	  		context.drawImage(player3, xMid + Math.cos(p3_space_calc) * midR3, yMid + Math.sin(p3_space_calc) * midR3);
+	  	}
+	  };
+	  
+	  player3.src = "http://131.118.95.193/steve/game/images/p3.png";
+	  
+	  var player4 = new Image();
+	  //var p4_space = 10;
+	  var p4_space_calc = (Math.PI / (numSpaces)) * ((p4_space * 10) / (numSpaces)) * 2;
+	  var midR4 = outR - 70;
+	  
+	  player4.onload = function() {
+	  	if(p4Dead){
+	  		context.drawImage(player4, xMid+100, yMid+25);
+	  	}
+	  	else{
+	  		context.drawImage(player4, xMid + Math.cos(p4_space_calc) * midR4, yMid + Math.sin(p4_space_calc) * midR4);
+	  	}  
+	  };
+	  
+	  player4.src = "http://131.118.95.193/steve/game/images/p4.png";
+	  
+
 	  //Draw 'Game of Death'
 	  var deathX = 230;
 	  var deathY = 300
@@ -452,8 +637,5 @@
 	  //context.fillText("Player 1", 50, 165);
 	  context.fillText(p1, 60, 180);  
 	}
-
-	
 </script>
-
 </html>
